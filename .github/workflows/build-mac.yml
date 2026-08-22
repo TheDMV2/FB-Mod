@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-13 # Uses x86_64 Intel Mac runner required by FileBot's build.xml
+    runs-on: macos-latest # Uses an active macOS runner
 
     steps:
     - name: Checkout Repository
@@ -19,10 +19,10 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
-    - name: Fetch Build Dependencies
+    - name: Download OpenJDK Dependency Cache
       run: |
-        # Runs the dependency fetching task if present in build.xml, otherwise fails silently and continues
-        ant resolve || ant fetch-dependencies || ant fetch || true
+        mkdir -p cache
+        curl -L -o cache/openjdk-11.0.2_osx-x64_bin.tar.gz https://download.java.net/java/GA/jdk11/28/GBL/openjdk-11.0.2_osx-x64_bin.tar.gz
 
     - name: Build JAR / Distribution with Ant
       run: |
@@ -32,7 +32,7 @@ jobs:
       run: |
         brew install create-dmg
         
-        # Package built output
+        # Package built JARs/distribution into the DMG
         mkdir -p dmg_stage
         cp -r dist/* dmg_stage/ || cp build/libs/*.jar dmg_stage/ || cp *.jar dmg_stage/
         
