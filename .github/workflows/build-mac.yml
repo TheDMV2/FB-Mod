@@ -19,20 +19,31 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
+    - name: Install Apache Ivy & Dependencies for Ant
+      run: |
+        # Create Ant library directory
+        mkdir -p ~/.ant/lib
+        
+        # Download Apache Ivy jar so Ant can resolve Groovy and build dependencies
+        curl -L -o ~/.ant/lib/ivy.jar https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar
+        
+        # Download Groovy All jar for Ant Groovy taskdef execution
+        curl -L -o ~/.ant/lib/groovy-all.jar https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.5.23/groovy-all-2.5.23.jar
+
     - name: Download Exact OpenJDK Build (Matching SHA256)
       run: |
         mkdir -p cache
         curl -L -o cache/openjdk-11.0.2_osx-x64_bin.tar.gz https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_osx-x64_bin.tar.gz
 
-    - name: Build JAR / Distribution with Ant (Emulating Intel x86_64)
+    - name: Build App & Packages with Ant
       run: |
+        # Use Rosetta Intel wrapper to satisfy FileBot architecture checks
         arch -x86_64 ant jar
 
     - name: Package DMG
       run: |
         brew install create-dmg
         
-        # Package built output
         mkdir -p dmg_stage
         cp -r dist/* dmg_stage/ || cp build/libs/*.jar dmg_stage/ || cp *.jar dmg_stage/
         
