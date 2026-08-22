@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13 # Uses x86_64 Intel Mac runner required by FileBot's build.xml
 
     steps:
     - name: Checkout Repository
@@ -19,7 +19,12 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
-    - name: Build JAR with Ant
+    - name: Fetch Build Dependencies
+      run: |
+        # Runs the dependency fetching task if present in build.xml, otherwise fails silently and continues
+        ant resolve || ant fetch-dependencies || ant fetch || true
+
+    - name: Build JAR / Distribution with Ant
       run: |
         ant jar
 
@@ -27,7 +32,7 @@ jobs:
       run: |
         brew install create-dmg
         
-        # Locate built JAR or staging directory (usually dist/ or build/release)
+        # Package built output
         mkdir -p dmg_stage
         cp -r dist/* dmg_stage/ || cp build/libs/*.jar dmg_stage/ || cp *.jar dmg_stage/
         
