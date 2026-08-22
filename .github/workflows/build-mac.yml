@@ -19,26 +19,21 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
-    - name: Install Apache Ivy & Dependencies for Ant
+    - name: Setup Ant Task Dependencies
       run: |
-        # Create Ant library directory
-        mkdir -p ~/.ant/lib
-        
-        # Download Apache Ivy jar so Ant can resolve Groovy and build dependencies
-        curl -L -o ~/.ant/lib/ivy.jar https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar
-        
-        # Download Groovy All jar for Ant Groovy taskdef execution
-        curl -L -o ~/.ant/lib/groovy-all.jar https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.5.23/groovy-all-2.5.23.jar
+        mkdir -p lib/ant
+        curl -L -o lib/ant/ivy.jar https://repo1.maven.org/maven2/org/apache/ivy/ivy/2.5.2/ivy-2.5.2.jar
+        curl -L -o lib/ant/groovy-all.jar https://repo1.maven.org/maven2/org/codehaus/groovy/groovy-all/2.5.23/groovy-all-2.5.23.jar
 
-    - name: Download Exact OpenJDK Build (Matching SHA256)
+    - name: Download OpenJDK Dependency Cache
       run: |
         mkdir -p cache
         curl -L -o cache/openjdk-11.0.2_osx-x64_bin.tar.gz https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_osx-x64_bin.tar.gz
 
-    - name: Build App & Packages with Ant
+    - name: Build JAR / Distribution with Ant
       run: |
-        # Use Rosetta Intel wrapper to satisfy FileBot architecture checks
-        arch -x86_64 ant jar
+        # Inject taskdef jars into Ant classpath and force os.arch=x86_64
+        ant -lib lib/ant -Dos.arch=x86_64 jar
 
     - name: Package DMG
       run: |
