@@ -19,22 +19,20 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
-    - name: Download Valid OpenJDK Dependency Cache
+    - name: Download Exact OpenJDK Build (Matching SHA256)
       run: |
         mkdir -p cache
-        # Valid direct mirror for openjdk-11.0.2_osx-x64_bin.tar.gz
-        curl -L -o cache/openjdk-11.0.2_osx-x64_bin.tar.gz https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.2%2B9/OpenJDK11U-jdk_x64_mac_hotspot_11.0.2_9.tar.gz
+        curl -L -o cache/openjdk-11.0.2_osx-x64_bin.tar.gz https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_osx-x64_bin.tar.gz
 
     - name: Build JAR / Distribution with Ant (Emulating Intel x86_64)
       run: |
-        # Use arch -x86_64 to bypass FileBot's Darwin arm64 execution block
         arch -x86_64 ant jar
 
     - name: Package DMG
       run: |
         brew install create-dmg
         
-        # Package built JARs/distribution into the DMG
+        # Package built output
         mkdir -p dmg_stage
         cp -r dist/* dmg_stage/ || cp build/libs/*.jar dmg_stage/ || cp *.jar dmg_stage/
         
