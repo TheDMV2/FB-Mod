@@ -36,6 +36,8 @@ jobs:
 
     - name: Build App & Packages with Ant
       run: |
+        # Ensure any PATH or arch overrides are included if needed
+        ant resolve-filebot jar
         # Create a mock 'uname' bin directory to trick inner shell calls into reporting x86_64
         mkdir -p bin_override
         echo '#!/bin/sh' > bin_override/uname
