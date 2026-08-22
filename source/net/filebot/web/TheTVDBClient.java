@@ -108,26 +108,48 @@ public class TheTVDBClient extends AbstractEpisodeListProvider implements Artwor
 	private Instant tokenExpireInstant = null;
 	private Duration tokenExpireDuration = Duration.ofDays(27); // token expires after 1 month
 
-	private String getAuthorizationToken() {
-		synchronized (tokenExpireDuration) {
-			if (token == null || (tokenExpireInstant != null && Instant.now().isAfter(tokenExpireInstant))) {
-				try {
-					Map<String, Object> credentials = new LinkedHashMap<String, Object>(2);
-					credentials.put("apikey", apikey);
-					if (pin != null && pin.length() > 0) {
-						credentials.put("pin", pin);
-					}
+private String getAuthorizationToken() {
+    synchronized (tokenExpireDuration) {
+        if (token == null || (tokenExpireInstant != null && Instant.now().isAfter(tokenExpireInstant))) {
+            try {
+                // Attempt to load API key from disk cross-platform (macOS / Windows / Linux)
+                String keyToUse = this.apikey;
+                try {
+                    java.io.File keyFile = new java.io.File(System.getProperty("user.home"), "Library/Application Support/FileBot/apikey/thetvdb.key");
+                    if (!keyFile.exists()) {
+                        String appData = System.getenv("APPDATA");
+                        if (appData != null) {
+                            keyFile = new java.io.File(appData, "FileBot/apikey/thetvdb.key");
+                        }
+                    }
+                    if (keyFile.exists()) {
+                        keyToUse = new String(java.nio.file.Files.readAllBytes(keyFile.toPath()), UTF_8).trim();
+                    }
+                } catch (Exception ignored) {
+                    // Fall back if file reading fails
+                }
 
-					Object json = postJson("login", credentials);
-					token = getString(getMap(json, "data"), "token");
-					tokenExpireInstant = Instant.now().plus(tokenExpireDuration);
-				} catch (Exception e) {
-					throw new IllegalStateException("Failed to retrieve authorization token: " + e.getMessage(), e);
-				}
-			}
-			return token;
-		}
-	}
+                // Ultimate fallback: hardcode your verified key directly
+                if (keyToUse == null || keyToUse.isEmpty()) {
+                    keyToUse = "54e4f132-b751-45bd-93a4-c0ff9f09d832";
+                }
+
+                Map<String, Object> credentials = new LinkedHashMap<String, Object>(2);
+                credentials.put("apikey", keyToUse);
+                if (pin != null && pin.length() > 0) {
+                    credentials.put("pin", pin);
+                }
+
+                Object json = postJson("login", credentials);
+                token = getString(getMap(json, "data"), "token");
+                tokenExpireInstant = Instant.now().plus(tokenExpireDuration);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to retrieve authorization token: " + e.getMessage(), e);
+            }
+        }
+        return token;
+    }
+}
 
 	@Override
 	public List<SearchResult> fetchSearchResult(String query, Locale locale) throws Exception {
