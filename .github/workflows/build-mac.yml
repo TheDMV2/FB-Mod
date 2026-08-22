@@ -3,7 +3,7 @@ name: Build macOS DMG
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch: # Allows manual trigger from the GitHub web UI
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,30 +13,29 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Set up Java
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '11'
         distribution: 'temurin'
 
-    - name: Build JAR with Gradle
+    - name: Build JAR with Ant
       run: |
-        chmod +x gradlew
-        ./gradlew jar
+        ant jar
 
-    - name: Create DMG Package
+    - name: Package DMG
       run: |
         brew install create-dmg
         
-        # Create temporary staging directory for the DMG
-        mkdir -p dist
+        # Locate built JAR or staging directory (usually dist/ or build/release)
+        mkdir -p dmg_stage
+        cp -r dist/* dmg_stage/ || cp build/libs/*.jar dmg_stage/ || cp *.jar dmg_stage/
         
-        # Package dist folder into DMG
         create-dmg \
           --volname "FileBot-Mod" \
           --window-size 500 300 \
           "FileBot-Mod-macOS.dmg" \
-          build/libs/
+          "dmg_stage"
 
     - name: Upload DMG Artifact
       uses: actions/upload-artifact@v4
